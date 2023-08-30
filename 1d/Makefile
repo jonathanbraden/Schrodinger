@@ -51,7 +51,7 @@ ifeq ($(BLAS),T)
 endif
 FLIBS+= -lm
 
-OBJS_OO = constants.o utils.o fftw_mod_wtype.o lattice.o eom-w-model.o output.o integrator.o time_stepper.o
+OBJS_OO = constants.o utils.o fftw_mod_wtype.o lattice.o eom-schrodinger.o output.o integrator.o time_stepper.o
 
 gp-oo: %: $(OBJS_OO) evolve-schrodinger.o
 	$(FC) $(FFLAGS) $(FOPT) $(FFTW_INC) $(MACROS) -o schrodinger evolve-schrodinger.o $(OBJS_OO) $(FFTW_LIB) $(FLIBS) $(THREAD_LIB)

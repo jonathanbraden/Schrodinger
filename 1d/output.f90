@@ -18,7 +18,7 @@ contains
     write(oFile,*) "# Model Parameters :"
     write(oFile,*) "# Not yet implemented"
     write(oFile,*) "#============================"
-    write(oFile,*) "# m_Qt   mt   rho"
+    write(oFile,*) "# m_Qt   mt   <|psi|^2>  <E>   <E>_by parts"
   end subroutine write_header
   
   subroutine output_log_file(fld, t, dt, fName)
@@ -29,7 +29,7 @@ contains
     character(80) :: fn
     integer, save :: oFile
     logical :: o
-    real(dl) :: en
+    real(dl) :: en, en_lap, prob
 
     fn = 'log.out'
     if (present(fName)) fn = trim(fName)
@@ -41,7 +41,9 @@ contains
     endif
 
     en = compute_total_energy(fld)
-    write(oFile,*) t, 0._dl, sum(fld**2)/size(fld,dim=1), en
+    en_lap = compute_total_energy_laplacian(fld)
+    prob = compute_probability(fld)
+    write(oFile,*) t, 0._dl, prob, en, en_lap
     
   end subroutine output_log_file
   

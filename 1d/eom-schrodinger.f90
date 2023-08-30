@@ -164,26 +164,36 @@ contains
     integer :: j
 
     en = 0._dl
-#ifdef DISCRETE
-
-#else
+    
     do j=1,2 
        tPair%realSpace(:) = fld(:,j,1)
-       call laplacian_1d_wtype(tPair,dk)
-       en = en - 0.5_dl*sum(fld(:,j,1)*tPair%realSpace)
-       !call gradsquared_1d_wtype(tPair,dk)
-       !en = en + 0.5_dl*sum(tPair%realSpace)
-
+       call gradsquared_1d_wtype(tPair,dk)
+       en = en + 0.5_dl*sum(tPair%realSpace)
        en = en + sum(pot(:)*fld(:,j,1)**2)
-    enddo
-#endif    
-    en = en / size(fld,dim=1)
+    enddo    
+    en = en * dx
   end function compute_total_energy
 
-  ! Fix normalizaion here
-  real(dl) function compute_probability_density(fld) result(rho)
+  real(dl) function compute_total_energy_laplacian(fld) result(en)
     real(dl), dimension(:,:,:), intent(in) :: fld
-    rho = sum(fld**2) / size(fld,dim=1)
-  end function compute_probability_density
+
+    integer :: j
+
+    en = 0._dl
+    do j=1,2
+       tPair%realSpace(:) = fld(:,j,1)
+       call laplacian_1d_wtype(tPair, dk)
+       en = en - 0.5_dl*sum( fld(:,j,1)*tPair%realSpace(:) )
+       en = en + sum(pot(:)*fld(:,j,1)**2)
+    enddo
+    en = en * dx
+  end function compute_total_energy_laplacian
+       
+  ! Fix normalizaion here
+  real(dl) function compute_probability(fld) result(rho)
+    real(dl), dimension(:,:,:), intent(in) :: fld
+
+    rho = sum(fld(:,:,1)**2) * dx
+  end function compute_probability
   
 end module eom
