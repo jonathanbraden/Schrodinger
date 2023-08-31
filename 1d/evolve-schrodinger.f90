@@ -29,12 +29,12 @@ program Schrodinger_1d
   
   nf = 3 ! Adjust based on PML choice
   call setup_simulation( nf, n, lSize/n, fld, tcur)
-  !call initialise_wavepacket(fld, 0._dl, 0._dl, 0.75_dl)
-  call initialise_coherent_state(fld, 0._dl, 0._dl, m2=(1.4_dl**2-1.))
+  call initialise_wavepacket(fld, -20._dl, 5._dl, 1._dl)
+  !call initialise_coherent_state(fld, 0._dl, 0._dl, m2=(1.4_dl**2-1.))
   !call set_time_steps_decay()
   time_stepper%dt = twopi/64./8.
-  time_stepper%out_size = 128
-  time_stepper%n_out_steps = 10
+  time_stepper%out_size = 64
+  time_stepper%n_out_steps = 100
   time_stepper%tcur = 0._dl
   call print_time_stepper(time_stepper)
   call time_evolve_stepper(fld, time_stepper, verbose_=.false.)

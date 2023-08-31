@@ -65,16 +65,34 @@ contains
 
     x0 = 2._dl
     call initialise_potential(x0)
-    call initialise_pml(2.*twopi*x0, 2)
+    !call initialise_pml(2.*twopi*x0, 2)
 
     !Output the potential
     open(unit=newunit(u), file='potential.dat')
+    write(u,*) "# \mu x    V(x)   Gamma(x)"
     do i=1,nLat
        write(u,*) xVals(i), pot(i), damping(i)
     enddo
     close(u)
   end subroutine create_lattice
 
+  subroutine initialise_model()
+    real(dl) :: x0
+    integer :: u, i
+
+    x0 = 2._dl
+    call initialise_potential(x0)
+    call initialise_pml(2.*twopi*x0, 2)
+
+    ! Output the potential and damping
+    open(unit=newunit(u), file='potential.dat')
+    write(u,*) "# \mu x    V(x)   Gamma(x)"
+    do i=1,nLat
+       write(u,*) xVals(i), pot(i), damping(i)
+    enddo
+    close(u)
+  end subroutine initialise_model
+  
   ! Allow for some input here
   subroutine initialise_potential(x0)
     real(dl), intent(in) :: x0
