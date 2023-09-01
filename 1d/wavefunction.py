@@ -5,16 +5,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Add spectral derivatives here.  Or else import them
+# Debug these
 def laplacian_spectral(f, dx, *, axis=1):
     n = f.shape[axis]
     
     norm = (2.*np.pi / dx)
-    fk = -norm**2*np.fft.fft(f)
-    df = np.fft.fftfreq(n)**2*fk
-    return np.fft.ifft(fk)
+    kv = np.fft.fftfreq(n) * norm
+    return np.fft.ifft( -kv**2 * np.fft.fft(f, axis=axis), axis=axis)
 
-def derivative_spectral(f, dx):
+def grad_spectral(f, dx, *, axis=1):
+    n = f.shape[axis]
+    norm = (2.*np.pi / dx)
+    kv = np.fft.fftfreq(n) * norm
+    return np.fft.ifft( 1j*kv * np.fft.fft(f, axis=axis), axis=axis)
     return
 
 
@@ -45,15 +48,27 @@ class Wavefunction:
     def compute_prob(self):
         return np.sum( np.abs(self.wf)**2, axis=-1)*self.dx
 
+    def momentum_operator(self):
+        """
+        p = -i\hbar\partial_x
+
+        which is Im(\partial\psi)
+        """
+        grad = derivative_spectral(self.wf, self.dx)
+        return -1j*grad
+    
     # Check ordering on this
     def density_matrix(self):
         return np.outer(self.wf, np.conj(self.wf))
 
-    # Fix normalization
+    # Debug normalization, and check sign convention
     def prob_current(self):
-        #dwf = grad_spectral(self.wf, self.dx)
-        #np.imag(np.conj(self.wf*dwf)
-        return
+        """
+        Returns the probability current
+         J = \hbar/(2mi)(\psi^*\nabla\psi - \psi\nabla\psi^*) = 
+        """
+        grad = grad_spectral(self.wf, self.dx)
+        return np.imag(np.conj(self.wf)*grad)
 
     def prob_current_divergence(self, *, method='laplacian'):
         #lap = laplacian_spectral(self.wf, self.dx)
