@@ -5,12 +5,29 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Add spectral derivatives here.  Or else import them
+def laplacian_spectral(f, dx, *, axis=1):
+    n = f.shape[axis]
+    
+    norm = (2.*np.pi / dx)
+    fk = -norm**2*np.fft.fft(f)
+    df = np.fft.fftfreq(n)**2*fk
+    return np.fft.ifft(fk)
+
+def derivative_spectral(f, dx):
+    return
+
+
 class Wavefunction:
 
-    def __init__(self, fName, potFile, nf=3):
+    def __init__(self, fName, potFile, logFile, nf=3):
         self.xv, self.pot, self.damp = np.loadtxt(potFile).T
         self.nLat = self.xv.size
-        
+        self.dx = self.xv[1]-self.xv[0]
+
+        # Simplify this at some point
+        self.t, self.prob, self.en, self.en_p = load_log('log_asym.out')
+
         data = np.fromfile(fName).reshape((-1,nf,2,self.nLat))
         self.psi = data[...,0,:] + 1j*data[...,1,:]
         self.wf = self.psi[:,0]
@@ -27,6 +44,25 @@ class Wavefunction:
     # Fix normalization in here
     def compute_prob(self):
         return np.sum( np.abs(self.wf)**2, axis=-1)*self.dx
+
+    # Check ordering on this
+    def density_matrix(self):
+        return np.outer(self.wf, np.conj(self.wf))
+
+    # Fix normalization
+    def prob_current(self):
+        #dwf = grad_spectral(self.wf, self.dx)
+        #np.imag(np.conj(self.wf*dwf)
+        return
+
+    def prob_current_divergence(self, *, method='laplacian'):
+        #lap = laplacian_spectral(self.wf, self.dx)
+        #if method=='laplacian':
+        #div = -np.imag(np.conj(psi)*lap)
+        #else:
+        return
+
+    # Add a bunch of plotting routines
     
 def load_wf_binary(fName, n, nf=2):
     d = np.fromfile(fName).reshape((-1,nf,2,n))
@@ -70,16 +106,13 @@ def wigner_function(psi):
     Compute the Wigner function of psi
     """
     return
-    
-if __name__=="__main__":
-    xv, pot, damp = load_potential('potential.dat')
-    t, prob, en, en_p = load_log('log.out')
-    dx = xv[1]-xv[0]
-    n = xv.size
-    
-    nf = 3
-    psi = load_wf_binary('fields.bin', n, nf)
-    wf = psi[:,0]
 
-    norm = np.sum(np.abs(wf)**2,axis=-1)*dx
-                
+def prob_current(psi):
+    return
+
+def prob_current_divergence(psi):
+    return
+
+if __name__=="__main__":
+    wf_sym = Wavefunction('fv_sym.bin', 'pot_sym.dat', 'log_sym.out')
+    wf_asym = Wavefunction('fv_asym.bin', 'pot_asym.dat', 'log_asym.out')       
