@@ -20,6 +20,9 @@ def grad_spectral(f, dx, *, axis=1):
     return np.fft.ifft( 1j*kv * np.fft.fft(f, axis=axis), axis=axis)
     return
 
+# Add real gradient for current divergence
+
+
 
 class Wavefunction:
 
@@ -39,12 +42,10 @@ class Wavefunction:
     def __str__(self):
         return "Wavefunction from 1D Schrodinger simulation"
 
-    # Fix normalization in here
     def compute_prob_region(self, region):
         mask = ( self.xv > region[0] ) & ( self.xv < region[1] )
         return np.sum( np.abs(self.wf[:,mask])**2, axis=-1 )*self.dx
 
-    # Fix normalization in here
     def compute_prob(self):
         return np.sum( np.abs(self.wf)**2, axis=-1)*self.dx
 
@@ -54,8 +55,7 @@ class Wavefunction:
 
         which is Im(\partial\psi)
         """
-        grad = derivative_spectral(self.wf, self.dx)
-        return -1j*grad
+        return -1j*derivative_spectral(self.wf, self.dx)
     
     # Check ordering on this
     def density_matrix(self):
@@ -65,19 +65,37 @@ class Wavefunction:
     def prob_current(self):
         """
         Returns the probability current
-         J = \hbar/(2mi)(\psi^*\nabla\psi - \psi\nabla\psi^*) = 
+         J = -\hbar/(2mi)(\psi^*\nabla\psi - \psi\nabla\psi^*) = 
         """
         grad = grad_spectral(self.wf, self.dx)
         return np.imag(np.conj(self.wf)*grad)
 
+    # Debug normalization and check sign convention
     def prob_current_divergence(self, *, method='laplacian'):
-        #lap = laplacian_spectral(self.wf, self.dx)
-        #if method=='laplacian':
-        #div = -np.imag(np.conj(psi)*lap)
-        #else:
-        return
+        if method=='laplacian':
+            lap = laplacian_spectral(self.wf, self.dx)
+            div = -np.imag(np.conj(self.wf)*lap)
+        # Fix this to use the real gradient
+        elif method=='divergence':
+            grad = self.prob_current()
+            div = -grad_spectral(grad, self.dx) # Oops, real derivative here
+        else:
+            print("Invalid method")
+            return None
+        return div
 
+    def overlap_ic(self):
+        """
+        Compute overlap with initial state
+        """
+        return (self.wf @ self.wf[0])*dx
+
+    def overlap_w_psi(self, psi):
+        return (self.wf @ psi)*dx
+    
     # Add a bunch of plotting routines
+
+
     
 def load_wf_binary(fName, n, nf=2):
     d = np.fromfile(fName).reshape((-1,nf,2,n))
@@ -98,17 +116,6 @@ def compute_tunnel_point(pot):
     """
     return
 
-def compute_prob_region(psi, xv, region):
-    """
-    Given the wavefunction, compute the probability that it remains trapped within some region.
-    """
-
-def density_matrix(psi):
-    """
-    Compute the density matrix
-    """
-    return
-
 def density_matrix_diff(psi):
     """
     Compute the density matrix in mean, difference rep.
@@ -120,12 +127,6 @@ def wigner_function(psi):
     """
     Compute the Wigner function of psi
     """
-    return
-
-def prob_current(psi):
-    return
-
-def prob_current_divergence(psi):
     return
 
 if __name__=="__main__":
