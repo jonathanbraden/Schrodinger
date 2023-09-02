@@ -62,27 +62,15 @@ contains
     do i=1,nLat
        xVals(i) = (i-1)*dx - 0.5*len
     enddo
-
-    x0 = 2._dl
-    call initialise_potential(x0)
-    !call initialise_pml(2.*twopi*x0, 2)
-
-    !Output the potential
-    open(unit=newunit(u), file='potential.dat')
-    write(u,*) "# \mu x    V(x)   Gamma(x)"
-    do i=1,nLat
-       write(u,*) xVals(i), pot(i), damping(i)
-    enddo
-    close(u)
   end subroutine create_lattice
 
-  subroutine initialise_model()
-    real(dl) :: x0
+  subroutine initialise_model(x0, pml_loc)
+    real(dl), intent(in) :: x0
+    real(dl), intent(in) :: pml_loc
     integer :: u, i
 
-    x0 = 2._dl
     call initialise_potential(x0)
-    call initialise_pml(2.*twopi*x0, 2)
+    call initialise_pml(pml_loc, 2)
 
     ! Output the potential and damping
     open(unit=newunit(u), file='potential.dat')
@@ -98,26 +86,37 @@ contains
     real(dl), intent(in) :: x0
 
     integer :: i
-    real(dl) :: xc
+    real(dl) :: xc, pot_m, x_m
     
-    pot(:) = 0._dl 
+    pot(:) = 0._dl
+    ! Use this to check I have the correct norm on my wf
     !pot(:) = 0.5_dl*xVals(:)**2
 
     ! Hertzberg
-    !pot(:) = 0.5_dl*xVals(:)**2
-    !pot(:) = pot(:) * (1.-0.5*(xVals(:)/x0)**2) / (1.+0.5*(xVals(:)/x0)**4) + 0.5_dl*x0**2
+    x_m = sqrt(sqrt(3._dl)-1._dl)
+    pot_m = (0.5_dl*x_m**2*(1.-0.5*x_m**2)/(1.+0.5*x_m**4) + 0.5_dl)*x0**2
+    
+    pot(:) = 0.5_dl*xVals(:)**2
+    pot(:) = pot(:) * (1.-0.5*(xVals(:)/x0)**2) / (1.+0.5*(xVals(:)/x0)**4) + 0.5_dl*x0**2
+
+    ! Modify at potential maximum
+    !where (xVals(:) < -x_m*x0) pot = pot_m
+
+    ! Extend quadratic all the way
+    where (xVals < 0.) pot = 0.5*xVals(:)**2 + 0.5_dl*x0**2
+    where (pot > 16.) pot = 16.
     
     ! Truncated Drummond
-    do i=1,nLat
-       xc = xVals(i)
-       if ( abs(xc) <= 0.5_dl*twopi*x0) then
-          pot(i) = cos(xc/x0) + 1._dl + 0.5_dl*1.4**2*sin(xc/x0)**2
-       endif
-    enddo
-    pot(:) = x0**2*pot(:)
+    !do i=1,nLat
+    !   xc = xVals(i)
+    !   if ( abs(xc) <= 0.5_dl*twopi*x0) then
+    !      pot(i) = cos(xc/x0) + 1._dl + 0.5_dl*1.4**2*sin(xc/x0)**2
+    !   endif
+    !enddo
+    !pot(:) = x0**2*pot(:)
 
   end subroutine initialise_potential
-
+  
   subroutine initialise_pml(wid, pow)
     real(dl), intent(in) :: wid
     integer, intent(in) :: pow
@@ -125,15 +124,8 @@ contains
     real(dl) :: xc
     
     damping(:) = 0._dl
-
     where (abs(xVals)>=wid) damping = (abs(xVals)-wid)**pow / (1._dl+(abs(xVals)-wid)**pow)
     
-    !do i=1,nLat
-    !   xc = abs(xVals(i))
-    !   if (xc >= wid) then
-    !      damping(i) = (xc-wid)**pow / (1. + (xc-wid)**pow)
-    !   endif
-    !enddo
   end subroutine initialise_pml
   
 end module lattice

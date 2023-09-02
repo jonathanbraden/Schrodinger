@@ -22,7 +22,9 @@ def grad_spectral(f, dx, *, axis=1):
 
 # Add real gradient for current divergence
 
-
+# IDEA: Add "energy" of the Hamilton-Jacobi wavefunction approximation.
+#       I think this is literally the local value of the "energy"
+#       Actually, not quite since the phase is important.
 
 class Wavefunction:
 
@@ -57,10 +59,12 @@ class Wavefunction:
         """
         return -1j*derivative_spectral(self.wf, self.dx)
     
-    # Check ordering on this
-    def density_matrix(self):
-        return np.outer(self.wf, np.conj(self.wf))
-
+    # This is wrong since I've got a 2d array
+    def density_matrix(self, *, tInd=None):
+        #dm = [ np.outer(p_, np.conj(p_) for p_ in self.wf) ]
+        #return np.array(dm)
+        return
+        
     # Debug normalization, and check sign convention
     def prob_current(self):
         """
@@ -116,19 +120,10 @@ def compute_tunnel_point(pot):
     """
     return
 
-def density_matrix_diff(psi):
-    """
-    Compute the density matrix in mean, difference rep.
-    Used by Wigner transform.
-    """
-    return
-
-def wigner_function(psi):
-    """
-    Compute the Wigner function of psi
-    """
-    return
-
 if __name__=="__main__":
     wf_sym = Wavefunction('fv_sym.bin', 'pot_sym.dat', 'log_sym.out')
     wf_asym = Wavefunction('fv_asym.bin', 'pot_asym.dat', 'log_asym.out')       
+    wf_m2 = Wavefunction('fv_hertzberg_m2_deform.bin',
+                         'pot_hertzberg_m2_deform.dat',
+                         'log_hertzberg_m2_deform.out')
+    

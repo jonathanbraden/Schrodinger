@@ -21,22 +21,24 @@ program Schrodinger_1d
   integer :: n_out_steps
   real(dl) :: dt
 
-  n = 512
-  lSize = 80._dl
+  n = 256
+  lSize = 80._dl ! Adjust to x0 choice ...
 
   ! Note to self:
   !  Need to scale width of Gaussian to sigma^2 = 1/sqrt{m_FV^2}
+  !  Oops, is it this way or the other way?
   
   nf = 3 ! Adjust based on PML choice
   call setup_simulation( nf, n, lSize/n, fld, tcur)
-  call initialise_wavepacket(fld, -20._dl, 5._dl, 1._dl)
-  !call initialise_coherent_state(fld, 0._dl, 0._dl, m2=(1.4_dl**2-1.))
-  !call set_time_steps_decay()
+  !call initialise_wavepacket(fld, -20._dl, 5._dl, 1._dl)
+  call initialise_coherent_state(fld, 0._dl, 0._dl, m2=1._dl)
+  
   time_stepper%dt = twopi/64./8.
   time_stepper%out_size = 64
-  time_stepper%n_out_steps = 100
+  time_stepper%n_out_steps = 8*100
   time_stepper%tcur = 0._dl
   call print_time_stepper(time_stepper)
+
   call time_evolve_stepper(fld, time_stepper, verbose_=.false.)
     
 contains
@@ -84,10 +86,18 @@ contains
     real(dl), intent(in) :: dx
     real(dl), dimension(:,:,:), pointer :: fld
     real(dl), pointer :: tcur
+
+    real(dl) :: x0, pml_loc
     
     call create_lattice(nf,nl,dx)
     call init_integrator(nVar)
+    x0 = 2.75_dl
+    pml_loc = 4.*x0
+    !pml_loc = 2.*twopi*x0
+    call initialise_model(x0, pml_loc)
 
+    !call initialise_model(x0, 2.*twopi*x0)  # BEC
+    
     fld(1:nLat,1:2,1:nFld) => yvec(1:2*nLat*nFld)
     tcur => yvec(2*nLat*nFld+1)
   end subroutine setup_simulation
