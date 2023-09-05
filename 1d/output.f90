@@ -59,7 +59,7 @@ contains
     if (present(fName)) fn = trim(fName)
 
     inquire(file=trim(fn), opened=o)
-    if (.not.o) open(unit=newunit(oFile), file=fn, access='stream')
+    if (.not.o) open(unit=newunit(oFile), file=fn, access='stream', status='replace')
 
     write(oFile) fld
   end subroutine output_fields_binary
