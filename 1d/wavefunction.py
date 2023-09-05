@@ -34,7 +34,7 @@ class Wavefunction:
         self.dx = self.xv[1]-self.xv[0]
 
         # Simplify this at some point
-        self.t, self.prob, self.en, self.en_p = load_log('log_asym.out')
+        self.t, self.prob, self.en, self.en_p = load_log(logFile)
 
         data = np.fromfile(fName).reshape((-1,nf,2,self.nLat))
         self.psi = data[...,0,:] + 1j*data[...,1,:]
@@ -92,16 +92,16 @@ class Wavefunction:
         """
         Compute overlap with initial state
         """
-        return (self.wf @ self.wf[0])*dx
+        return (self.wf @ self.wf[0])*self.dx
 
     def overlap_w_psi(self, psi):
-        return (self.wf @ psi)*dx
+        return (self.wf @ psi)*self.dx
     
     # Add a bunch of plotting routines
 
 
     
-def load_wf_binary(fName, n, nf=2):
+def load_wf_binary(fName, n, nf=3):
     d = np.fromfile(fName).reshape((-1,nf,2,n))
     psi = d[...,0,:] + 1j*d[...,1,:]
     return psi
@@ -126,4 +126,5 @@ if __name__=="__main__":
     wf_m2 = Wavefunction('fv_hertzberg_m2_deform.bin',
                          'pot_hertzberg_m2_deform.dat',
                          'log_hertzberg_m2_deform.out')
-    
+
+    wf = Wavefunction('fields.bin', 'potential.dat', 'log.out')
