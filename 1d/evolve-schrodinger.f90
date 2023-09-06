@@ -20,22 +20,23 @@ program Schrodinger_1d
   ! Move into time stepper
   integer :: n_out_steps
   real(dl) :: dt
+  real(dl) :: x0
 
-  n = 256
-  lSize = 80._dl ! Adjust to x0 choice ...
+  x0 = sqrt(3._dl)
+  n = 256  ! Adjust to x0 choice to ensure resolution
+  lSize = 40.*sqrt(sqrt(3._dl)-1._dl)*x0 
 
   ! Note to self:
   !  Need to scale width of Gaussian to sigma^2 = 1/sqrt{m_FV^2}
   !  Oops, is it this way or the other way?
   
   nf = 3 ! Adjust based on PML choice
-  call setup_simulation( nf, n, lSize/n, fld, tcur)
-  !call initialise_wavepacket(fld, -20._dl, 5._dl, 1._dl)
+  call setup_simulation( nf, n, lSize/n, fld, tcur, x0)
   call initialise_coherent_state(fld, 0._dl, 0._dl, m2=1._dl)
   
   time_stepper%dt = twopi/64./8.
-  time_stepper%out_size = 64
-  time_stepper%n_out_steps = 8*100
+  time_stepper%out_size = 64*4  ! Downsampling to save space
+  time_stepper%n_out_steps = 100
   time_stepper%tcur = 0._dl
   call print_time_stepper(time_stepper)
 
@@ -78,25 +79,39 @@ contains
     fld(:,1,1) = exp(-0.5_dl*(xVals-x0)**2/sig2)*cos( p0*(xVals-0.5*x0) ) / (0.5_dl*twopi*sig2)**0.25
     fld(:,2,1) = exp(-0.5_dl*(xVals-x0)**2/sig2)*sin( p0*(xVals-0.5*x0) ) / (0.5_dl*twopi*sig2)**0.25
   end subroutine initialise_coherent_state 
+
+  subroutine initialise_cat_state(fld, r0, m2)
+    real(dl), dimension(:,:,:), intent(inout) :: fld
+    real(dl), intent(in) :: r0
+    real(dl), intent(in), optional :: m2
+
+    real(dl) :: sig2
+
+    sig2 = 1._dl
+    if (present(m2)) sig2 = sqrt(m2)
+
+    fld = 0._dl
+    fld(:,1,1) = exp(-0.5_dl*(xVals-r0)**2/sig2) / (0.5_dl*twopi*sig2)**0.25 &
+                +exp(-0.5_dl*(xVals+r0)**2/sig2) / (0.5_dl*twopi*sig2)**0.25
+    
+  end subroutine initialise_cat_state
   
   !>@brief
   !> Initialise the integrator, setup FFTW, boot MPI, and perform other necessary setup before starting the program
-  subroutine setup_simulation(nf, nl, dx, fld, tcur)
+  subroutine setup_simulation(nf, nl, dx, fld, tcur, x0)
     integer, intent(in) :: nf,nl
     real(dl), intent(in) :: dx
     real(dl), dimension(:,:,:), pointer :: fld
     real(dl), pointer :: tcur
+    real(dl), intent(in) :: x0
 
-    real(dl) :: x0, pml_loc
+    real(dl) :: pml_loc
     
     call create_lattice(nf,nl,dx)
     call init_integrator(nVar)
-    x0 = 2.75_dl
-    pml_loc = 4.*x0
-    !pml_loc = 2.*twopi*x0
-    call initialise_model(x0, pml_loc)
 
-    !call initialise_model(x0, 2.*twopi*x0)  # BEC
+    pml_loc = 3.*sqrt(2._dl)*x0 
+    call initialise_model(x0, pml_loc)
     
     fld(1:nLat,1:2,1:nFld) => yvec(1:2*nLat*nFld)
     tcur => yvec(2*nLat*nFld+1)

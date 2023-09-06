@@ -37,7 +37,51 @@ module eom
   implicit none
     
 contains
+
+  subroutine derivs(yc, yp)
+    real(dl), dimension(:), intent(in) :: yc
+    real(dl), dimension(:), intent(out) :: yp
+
+    yp = 0._dl  ! Remove this later
+
+    ! Convert these to chebyshev derivatives
+    tPair%realSpace(:) = yc(R1)
+    call laplacian_1d_wtype(tPair,dk)
+    yp(I1) = yp(I1) + 0.5_dl*tPair%realSpace(:) - pot(:)*yc(R1)
     
+    tPair%realSpace(:) = yc(I1)
+    call laplacian_1d_wtype(tPair,dk)
+    yp(R1) = yp(R1) - 0.5_dl*tPair%realSpace(:) + pot(:)*yc(I1)
+
+    yp(I1) = yp(I1) - damping(:)*yc(I1)
+    yp(R1) = yp(R1) - damping(:)*yc(R1)
+    yp(I2) = yp(I2) - damping(:)*yc(I2)
+    yp(R2) = yp(R2) - damping(:)*yc(R2)
+
+    yp(I1) = yp(I1) - damping(:)*pot(:)*yc(R3)
+    yp(R1) = yp(R1) + damping(:)*pot(:)*yc(I3)
+    
+    tPair%realSpace(:) = yc(R1)
+    call derivative_1d_wtype(tPair, dk)
+    yp(I2) = yp(I2) - damping(:)*tPair%realSpace(:)
+
+    tPair%realSpace(:) = yc(I1)
+    call derivative_1d_wtype(tPair, dk)
+    yp(R2) = yp(R2) + damping(:)*tPair%realSpace(:)
+    
+    tPair%realSpace(:) = yc(R2)
+    call derivative_1d_wtype(tPair, dk)
+    yp(R1) = yp(R1) + 0.5_dl*tPair%realSpace(:)
+    
+    tPair%realSpace(:) = yc(I2)
+    call derivative_1d_wtype(tPair, dk)
+    yp(I1) = yp(I1) + 0.5_dl*tPair%realSpace(:)
+
+    yp(R3) = yc(R1)
+    yp(I3) = yc(I1)
+    
+  end subroutine derivs
+  
   !>@brief
   !> Compute the derivatives for Schrodinger equation
   subroutine derivs_cap(yc,yp)
@@ -100,50 +144,6 @@ contains
     call derivative_1d_wtype(tPair, dk)
     yp(I1) = yp(I1) + 0.5_dl*tPair%realSpace(:)
   end subroutine derivs_b
-
-  subroutine derivs(yc, yp)
-    real(dl), dimension(:), intent(in) :: yc
-    real(dl), dimension(:), intent(out) :: yp
-
-    yp = 0._dl  ! Remove this later
-
-    ! Convert these to chebyshev derivatives
-    tPair%realSpace(:) = yc(R1)
-    call laplacian_1d_wtype(tPair,dk)
-    yp(I1) = yp(I1) + 0.5_dl*tPair%realSpace(:) - pot(:)*yc(R1)
-    
-    tPair%realSpace(:) = yc(I1)
-    call laplacian_1d_wtype(tPair,dk)
-    yp(R1) = yp(R1) - 0.5_dl*tPair%realSpace(:) + pot(:)*yc(I1)
-
-    yp(I1) = yp(I1) - damping(:)*yc(I1)
-    yp(R1) = yp(R1) - damping(:)*yc(R1)
-    yp(I2) = yp(I2) - damping(:)*yc(I2)
-    yp(R2) = yp(R2) - damping(:)*yc(R2)
-
-    yp(I1) = yp(I1) - damping(:)*pot(:)*yc(R3)
-    yp(R1) = yp(R1) + damping(:)*pot(:)*yc(I3)
-    
-    tPair%realSpace(:) = yc(R1)
-    call derivative_1d_wtype(tPair, dk)
-    yp(I2) = yp(I2) - damping(:)*tPair%realSpace(:)
-
-    tPair%realSpace(:) = yc(I1)
-    call derivative_1d_wtype(tPair, dk)
-    yp(R2) = yp(R2) + damping(:)*tPair%realSpace(:)
-    
-    tPair%realSpace(:) = yc(R2)
-    call derivative_1d_wtype(tPair, dk)
-    yp(R1) = yp(R1) + 0.5_dl*tPair%realSpace(:)
-    
-    tPair%realSpace(:) = yc(I2)
-    call derivative_1d_wtype(tPair, dk)
-    yp(I1) = yp(I1) + 0.5_dl*tPair%realSpace(:)
-
-    yp(R3) = yc(R1)
-    yp(I3) = yc(I1)
-    
-  end subroutine derivs
   
   subroutine compute_probability_current(current, fld)
     real(dl), dimension(1:nLat), intent(out) :: current
