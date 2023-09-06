@@ -21,10 +21,13 @@ def grad_spectral(f, dx, *, axis=1):
     return
 
 # Add real gradient for current divergence
+# Eventually import these from a separate module
 
 # IDEA: Add "energy" of the Hamilton-Jacobi wavefunction approximation.
 #       I think this is literally the local value of the "energy"
 #       Actually, not quite since the phase is important.
+
+# To Do : Make sure that I've normalized the wavefunction in here.
 
 class Wavefunction:
 
@@ -39,11 +42,16 @@ class Wavefunction:
         data = np.fromfile(fName).reshape((-1,nf,2,self.nLat))
         self.psi = data[...,0,:] + 1j*data[...,1,:]
         self.wf = self.psi[:,0]
+        self.prob = self.compute_prob()
         return
 
     def __str__(self):
         return "Wavefunction from 1D Schrodinger simulation"
 
+    # Write this
+    def _normalise_wavefunction(self):
+        return
+    
     def compute_prob_region(self, region):
         mask = ( self.xv > region[0] ) & ( self.xv < region[1] )
         return np.sum( np.abs(self.wf[:,mask])**2, axis=-1 )*self.dx
@@ -60,10 +68,12 @@ class Wavefunction:
         return -1j*derivative_spectral(self.wf, self.dx)
     
     # This is wrong since I've got a 2d array
-    def density_matrix(self, *, tInd=None):
-        #dm = [ np.outer(p_, np.conj(p_) for p_ in self.wf) ]
-        #return np.array(dm)
-        return
+    def density_matrix_slice(self, tInd):
+        """
+        Compute the density matrix (expressed in the coordinate basis)
+        on the indicated time slice.
+        """
+        return np.outer( self.wf[tInd]*np.conj(self.wf[tInd]) )
         
     # Debug normalization, and check sign convention
     def prob_current(self):
@@ -75,6 +85,7 @@ class Wavefunction:
         return np.imag(np.conj(self.wf)*grad)
 
     # Debug normalization and check sign convention
+    # Fix real vs complex derivative use in 'divergence' method
     def prob_current_divergence(self, *, method='laplacian'):
         if method=='laplacian':
             lap = laplacian_spectral(self.wf, self.dx)
@@ -113,18 +124,5 @@ def load_log(fName):
     t, _, prob, en, en_p = np.loadtxt(fName).T
     return t, prob, en, en_p
 
-# Functionality to code up
-def compute_tunnel_point(pot):
-    """
-    Compute the escape point for the particle (i.e. the point on the opposite side of the barrier with equal energy to the FV)
-    """
-    return
-
 if __name__=="__main__":
-    wf_sym = Wavefunction('fv_sym.bin', 'pot_sym.dat', 'log_sym.out')
-    wf_asym = Wavefunction('fv_asym.bin', 'pot_asym.dat', 'log_asym.out')       
-    wf_m2 = Wavefunction('fv_hertzberg_m2_deform.bin',
-                         'pot_hertzberg_m2_deform.dat',
-                         'log_hertzberg_m2_deform.out')
-
     wf = Wavefunction('fields.bin', 'potential.dat', 'log.out')
