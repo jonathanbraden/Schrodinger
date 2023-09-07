@@ -43,6 +43,7 @@ class Wavefunction:
         self.psi = data[...,0,:] + 1j*data[...,1,:]
         self.wf = self.psi[:,0]
         self.prob = self.compute_prob()
+        self.current = self._prob_current()
         return
 
     def __str__(self):
@@ -76,7 +77,7 @@ class Wavefunction:
         return np.outer( self.wf[tInd]*np.conj(self.wf[tInd]) )
         
     # Debug normalization, and check sign convention
-    def prob_current(self):
+    def _prob_current(self):
         """
         Returns the probability current
          J = -\hbar/(2mi)(\psi^*\nabla\psi - \psi\nabla\psi^*) = 
@@ -126,3 +127,4 @@ def load_log(fName):
 
 if __name__=="__main__":
     wf = Wavefunction('fields.bin', 'potential.dat', 'log.out')
+    wf_sym = Wavefunction('fv_sym.bin', 'pot_sym.dat', 'log_sym.out')
